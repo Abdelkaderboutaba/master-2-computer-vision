@@ -1,0 +1,14 @@
+body {
+    margin: 0px;
+    overflow: hidden;
+}
+
+.lines {
+    stroke: black;
+    stroke-width: 10px;
+}
+
+.lines path {
+    stroke: teal;
+    stroke-linejoin: round;
+}

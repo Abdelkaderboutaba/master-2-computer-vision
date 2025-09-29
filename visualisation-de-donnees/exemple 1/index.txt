@@ -1,0 +1,33 @@
+const main = (container) => {
+  const h = 500;
+  const w = 960;
+  const svg = d3
+    .select(container)
+    .selectAll("svg")
+    .data([null])
+    .join("svg")
+    .attr("height", h)
+    .attr("width", w)
+    .style("background", "#c0c0c0");
+
+  const data = [
+    { x: 155, y: 223, r: 20, fill: "#ff8040" },
+    { x: 362, y: 236, r: 52, fill: "#00ff00" },
+    { x: 494, y: 113, r: 20, fill: "#FF0000" },
+    { x: 781, y: 113, r: 79, fill: "#FF0000" },
+    { x: 703, y: 258, r: 40, fill: "#FF0000" },
+  ];
+
+  svg
+    .selectAll("circle")
+    .data(data)
+    .join("circle")
+    .attr("cx", (d) => d.x)
+    .attr("cy", (d) => d.y)
+    .attr("r", (d) => d.r)
+    .attr("fill", (d) => d.fill)
+    .attr("opacity", 0.1);
+};
+
+const container = document.getElementById("container");
+main(container);
