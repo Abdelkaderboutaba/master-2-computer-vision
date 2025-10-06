@@ -147,3 +147,4 @@ groupe1.selectAll("circle")
        .attr("fill","white")
 
 
+
