@@ -1,3 +1,105 @@
+const svg = d3.select("body")
+              .append("svg")
+              .attr("width",800)
+              .attr("height",800)
+              .style("background-color","grey")
+
+
+
+d3.csv("nc.csv").then(data => {
+
+    let x=30
+    let y=20
+    data.forEach((d,i) => {
+        
+       svg.append("circle")
+       .attr("cx",x)
+       .attr("cy",y)
+       .attr("r",15)
+       .attr("fill",d.Hex)
+
+
+    
+
+       svg.append("text")
+          .attr("x",x-20)
+          .attr("y",y+25)
+          .text(d.Name)
+          .style("font-size","12px")
+
+
+       x=x+90;
+       if(x>700){
+        x=30;
+        y=y+80;
+       }
+
+    });
+    
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // // const svg = d3.select("body")
 // //               .append("svg")
@@ -152,40 +254,3 @@
 
 
 // })
-
-
-
-const svg = d3.select("body")
-              .append("svg")
-              .attr("width",800)
-              .attr("height",800)
-              .style("background-color","grey")
-
-d3.csv("nc.csv").then(data => {
-
-    let x=30
-    let y=20
-    data.forEach((d,i) => {
-        
-       svg.append("circle")
-       .attr("cx",x)
-       .attr("cy",y)
-       .attr("r",15)
-       .attr("fill",d.Hex)
-
-       svg.append("text")
-          .attr("x",x-15)
-          .attr("y",y+25)
-          .text(d.Name)
-          .style("font-size","12px")
-
-
-       x=x+90;
-       if(x>700){
-        x=30;
-        y=y+80;
-       }
-
-    });
-    
-});
