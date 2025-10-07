@@ -3,7 +3,7 @@ const svg = d3.select("body")
               .append("svg")
               .attr("width",800)
               .attr("height",800)
-              .style("background-color","grey")
+              .style("background-color","white")
 
         
 
@@ -14,6 +14,8 @@ d3.csv("nc.csv").then(data => {
     let x=30
     let y=20
     data.forEach((d,i) => {
+
+       
         
        svg.append("circle")
        .attr("cx",x)
@@ -21,19 +23,13 @@ d3.csv("nc.csv").then(data => {
        .attr("r",15)
        .attr("fill",d.Hex)
 
-       data.forEach(d => d.value = +d.value);
-       svg.append("rect")
-          .attr("x", x)
-          .attr("y", 500 - d.value)  // part du bas
-          .attr("width", 30)
-          .attr("height", d.value)
-          .attr("fill", "red");
+       
 
        svg.append("text")
           .attr("x",x-20)
-          .attr("y",y+25)
+          .attr("y",y+30)
           .text(d.Name)
-          .style("font-size","12px")
+          .style("font-size","14px")
 
 
        x=x+90;
@@ -45,6 +41,60 @@ d3.csv("nc.csv").then(data => {
     });
     
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
