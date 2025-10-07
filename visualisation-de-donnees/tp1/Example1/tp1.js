@@ -1,12 +1,15 @@
+
 const svg = d3.select("body")
               .append("svg")
               .attr("width",800)
               .attr("height",800)
               .style("background-color","grey")
 
-
+        
 
 d3.csv("nc.csv").then(data => {
+
+    
 
     let x=30
     let y=20
@@ -18,8 +21,13 @@ d3.csv("nc.csv").then(data => {
        .attr("r",15)
        .attr("fill",d.Hex)
 
-
-    
+       data.forEach(d => d.value = +d.value);
+       svg.append("rect")
+          .attr("x", x)
+          .attr("y", 500 - d.value)  // part du bas
+          .attr("width", 30)
+          .attr("height", d.value)
+          .attr("fill", "red");
 
        svg.append("text")
           .attr("x",x-20)
@@ -41,8 +49,23 @@ d3.csv("nc.csv").then(data => {
 
 
 
+// d3.csv("mon.csv").then(data => {
+//     // convertir les valeurs en nombre
+//     data.forEach(d => d.value = +d.value);
 
+//     let x = 50; // position initiale en x
 
+//     data.forEach(d => {
+//         svg.append("rect")
+//            .attr("x", x)
+//            .attr("y", 500 - d.value)  // part du bas
+//            .attr("width", 30)
+//            .attr("height", d.value)
+//            .attr("fill", "steelblue");
+
+//         x += 40; // espace entre les barres
+//     });
+// });
 
 
 
