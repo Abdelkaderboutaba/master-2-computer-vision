@@ -29,7 +29,7 @@ d3.csv("us.csv").then(data => {
    
     const xscale= d3.scaleLinear()
                     .domain([0,d3.max(data,d => d.population)])
-                    .range([0,500])
+                    .range([0,800])
 
 
     const yscale =d3.scaleBand()
@@ -39,16 +39,16 @@ d3.csv("us.csv").then(data => {
     
     
 
-    // 3️⃣ Créer les barres
-    group1.selectAll("rect")
-          .data(data)
-          .enter()
-          .append("rect")
-          .attr("x", 0)
-          .attr("y", d => yscale(d.place))
-          .attr("height", yscale.bandwidth())
-          .attr("width", d => xscale(d.population))
-          .attr("fill", "steelblue");
+    // // 3️⃣ Créer les barres
+    // group1.selectAll("rect")
+    //       .data(data)
+    //       .enter()
+    //       .append("rect")
+    //       .attr("x", 0)
+    //       .attr("y", d => yscale(d.place))
+    //       .attr("height", yscale.bandwidth())
+    //       .attr("width", d => xscale(d.population))
+    //       .attr("fill", "steelblue");
 
     group1.append("g")
     .attr("transform", "translate(0,0)")
