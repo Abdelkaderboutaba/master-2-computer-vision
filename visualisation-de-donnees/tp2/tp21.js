@@ -1,0 +1,55 @@
+const svg=d3.select("body")
+            .append("svg")
+            .attr("height",1000)
+            .attr("width",1000)
+            .style("background-color","grey")
+
+
+d3.csv("us.csv").then(data =>{
+
+    data = data.slice(9,25)
+
+    const groupe=svg.append("g")
+               .attr("transform" , "translate(150,100)")
+
+    const xscale=d3.scaleLinear()
+                   .domain([0,d3.max(data,d=>d.population)])
+                   .range([0,700])
+    
+    const yscale=d3.scaleBand()
+                   .domain(data.map(d=>d.place))
+                   .range([0,500])
+                   .padding(0.2)
+    
+    groupe.append("g")
+      .attr("transform" , "translate(0,0)")
+      .call(d3.axisLeft(yscale))
+    
+    groupe.append("g")
+          .attr("transform","translate(0,500)")
+          .call(d3.axisBottom(xscale))
+
+    groupe.selectAll("rect")
+          .data(data)
+          .enter()
+          .append("rect")
+          .attr("x",0)
+          .attr("y",d => yscale(d.place))
+          .attr("width",d => xscale(d.population))
+          .attr("height",yscale.bandwidth())
+          .attr("fill","steelblue")
+
+    groupe.append("text")
+          .attr("x",10)
+          .attr("y",0)
+          .text("(place)")
+          .attr("font-size","20px")
+
+    groupe.append("text")
+          .attr("x",700)
+          .attr("y",500)
+          .text("(population)")
+          .attr("font-size","20px")
+          
+    
+})
