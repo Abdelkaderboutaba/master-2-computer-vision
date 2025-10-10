@@ -38,5 +38,18 @@ d3.csv("us.csv").then(data =>{
           .attr("width",d => xscale(d.population))
           .attr("height",yscale.bandwidth())
           .attr("fill","steelblue")
+
+    groupe.append("text")
+          .attr("x",10)
+          .attr("y",0)
+          .text("(place)")
+          .attr("font-size","20px")
+
+    groupe.append("text")
+          .attr("x",700)
+          .attr("y",500)
+          .text("(population)")
+          .attr("font-size","20px")
+          
     
 })
