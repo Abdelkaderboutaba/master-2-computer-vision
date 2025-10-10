@@ -69,8 +69,8 @@ d3.csv("us.csv").then(data => {
   
   const yscale = d3.scaleBand()
     .domain(data.map(d => d.place))
-    .range([xpadding, 700])
-    .padding(0.1);
+    .range([xpadding, 500])
+    .padding(0.2);
 
   g1.selectAll("rect")
     .data(data)
