@@ -1,117 +1,165 @@
 import pygame
-import sys
+import math
 
 pygame.init()
 
-# --- Fenêtre ---
-WIDTH, HEIGHT = 700, 500
+# --- Configuration fenêtre ---
+WIDTH, HEIGHT = 1000, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("🧠 Le neurone décideur")
-
-font = pygame.font.SysFont("Arial", 24)
+pygame.display.set_caption("Perceptron Cartoon - Animal sur la ligne")
 
 # --- Couleurs ---
-WHITE = (255, 255, 255)
+SKY = (180, 230, 255)
 BLACK = (0, 0, 0)
-BLUE = (100, 150, 255)
-GREEN = (0, 200, 0)
-RED = (200, 0, 0)
-YELLOW = (255, 255, 0)
-GRAY = (180, 180, 180)
+WHITE = (255, 255, 255)
+GREEN = (0, 200, 120)
+YELLOW = (255, 230, 120)
+BLUE = (100, 180, 255)
+RED = (255, 100, 100)
+ORANGE = (255, 170, 70)
+GREY = (200, 200, 200)
 
-# --- Variables du perceptron ---
-input1 = 0
-input2 = 0
-w1 = 0.5
-w2 = 0.5
-bias = 0.2
-threshold = 1
+font = pygame.font.Font(None, 32)
+big_font = pygame.font.Font(None, 42)
 
-# --- Fonctions utilitaires ---
-def perceptron_output(x1, x2, w1, w2, bias):
-    s = x1 * w1 + x2 * w2 + bias
-    return 1 if s >= threshold else 0
+# --- Charger images ---
+def load_image(path, size):
+    img = pygame.image.load(path).convert_alpha()
+    return pygame.transform.smoothscale(img, size)
 
-def draw_button(x, y, value, label):
-    color = GREEN if value == 1 else RED
-    pygame.draw.circle(screen, color, (x, y), 30)
-    text = font.render(label, True, WHITE)
-    screen.blit(text, (x - 25, y + 40))
+eye_img = load_image("images/eye.png", (120, 120))
+ear_img = load_image("images/ear.png", (120, 120))
+lamp_on = load_image("images/lamp_on.png", (100, 100))
+lamp_off = load_image("images/lamp_off.png", (100, 100))
+sun_img = load_image("images/sun.png", (90, 90))
+sound_img = load_image("images/sound.png", (90, 90))
+cat_img_original = load_image("images/cat.png", (80, 80))
 
-def draw_slider(x, y, value, label):
-    pygame.draw.rect(screen, GRAY, (x, y, 200, 10))
-    knob_x = int(x + value * 200)
-    pygame.draw.circle(screen, BLUE, (knob_x, y + 5), 10)
-    text = font.render(f"{label}: {value:.2f}", True, BLACK)
-    screen.blit(text, (x, y - 30))
-    return x, y, knob_x
+# --- Positions ---
+light_source = (120, 150)
+sound_source = (120, 450)
+eye_pos = (300, 150)
+ear_pos = (300, 450)
+neuron_pos = (600, 300)
+output_pos = (850, 300)
 
-def draw_output(value):
-    pygame.draw.circle(screen, YELLOW if value == 1 else GRAY, (550, 250), 60)
-    text = font.render("OUI" if value == 1 else "NON", True, BLACK)
-    screen.blit(text, (520, 245))
+# --- Perceptron ---
+inputs = [1, 1]      # Entrées reçues
+weights = [0.6, 0.4] # Poids
+bias = 0.1
+
+def activation(sum_value):
+    return 1 if sum_value >= 0.7 else 0
+
+weighted_sum = sum(inputs[i] * weights[i] for i in range(2)) + bias
+output = activation(weighted_sum)
+
+# --- Animation ---
+clock = pygame.time.Clock()
+running = True
+stage = 0
+progress = 0
+speed = 0.01
+
+def draw_arrow(start, end, color, width=6):
+    pygame.draw.line(screen, color, start, end, width)
+    rotation = math.atan2(start[1] - end[1], end[0] - start[0])
+    pygame.draw.polygon(screen, color, [
+        (end[0], end[1]),
+        (end[0] - 15 * math.cos(rotation + math.pi / 6), end[1] + 15 * math.sin(rotation + math.pi / 6)),
+        (end[0] - 15 * math.cos(rotation - math.pi / 6), end[1] + 15 * math.sin(rotation - math.pi / 6))
+    ])
+
+def draw_text_center(text, y):
+    text_surface = big_font.render(text, True, BLACK)
+    text_rect = text_surface.get_rect(center=(WIDTH // 2, y))
+    screen.blit(text_surface, text_rect)
 
 # --- Boucle principale ---
-running = True
-dragging_w1 = dragging_w2 = False
-
 while running:
-    screen.fill(WHITE)
+    screen.fill(SKY)
 
-    # --- Titre ---
-    title = font.render("🧠 Le neurone décideur : prend-il une décision ?", True, BLACK)
-    screen.blit(title, (120, 30))
-
-    # --- Entrées ---
-    draw_button(150, 200, input1, "Entrée 1")
-    draw_button(150, 350, input2, "Entrée 2")
-
-    # --- Poids ---
-    w1_area = draw_slider(300, 200, w1, "Poids 1")
-    w2_area = draw_slider(300, 350, w2, "Poids 2")
-
-    # --- Calcul du perceptron ---
-    output = perceptron_output(input1, input2, w1, w2, bias)
-
-    # --- Sortie ---
-    draw_output(output)
-
-    # --- Texte explicatif ---
-    explain = font.render(
-        f"Somme = {input1}×{w1:.2f} + {input2}×{w2:.2f} + {bias:.2f}",
-        True, BLACK)
-    screen.blit(explain, (180, 420))
-
-    pygame.display.flip()
-
-    # --- Événements ---
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            running = False
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mx, my = pygame.mouse.get_pos()
+    # --- Dessin des images ---
+    screen.blit(sun_img, (light_source[0] - 45, light_source[1] - 45))
+    screen.blit(sound_img, (sound_source[0] - 45, sound_source[1] - 45))
+    screen.blit(eye_img, (eye_pos[0] - 60, eye_pos[1] - 60))
+    screen.blit(ear_img, (ear_pos[0] - 60, ear_pos[1] - 60))
 
-            # Boutons d’entrée
-            if (mx - 150)**2 + (my - 200)**2 < 30**2:
-                input1 = 1 - input1  # Toggle
-            if (mx - 150)**2 + (my - 350)**2 < 30**2:
-                input2 = 1 - input2
+    lamp = lamp_on if output == 1 else lamp_off
+    screen.blit(lamp, (output_pos[0] - 50, output_pos[1] - 50))
 
-            # Curseur W1
-            if abs(my - (w1_area[1] + 5)) < 15 and w1_area[0] <= mx <= w1_area[0] + 200:
-                dragging_w1 = True
-            # Curseur W2
-            if abs(my - (w2_area[1] + 5)) < 15 and w2_area[0] <= mx <= w2_area[0] + 200:
-                dragging_w2 = True
+    # --- Flèches initiales ---
+    draw_arrow((light_source[0]+50, light_source[1]), (eye_pos[0]-60, eye_pos[1]), GREY)
+    draw_arrow((sound_source[0]+50, sound_source[1]), (ear_pos[0]-60, ear_pos[1]), GREY)
+    draw_arrow((eye_pos[0]+60, eye_pos[1]), (neuron_pos[0]-70, neuron_pos[1]-50), GREY)
+    draw_arrow((ear_pos[0]+60, ear_pos[1]), (neuron_pos[0]-70, neuron_pos[1]+50), GREY)
+    draw_arrow((neuron_pos[0]+75, neuron_pos[1]), (output_pos[0]-60, output_pos[1]), GREY)
 
-        if event.type == pygame.MOUSEBUTTONUP:
-            dragging_w1 = dragging_w2 = False
+    # --- Animation selon les étapes ---
+    if stage == 0:
+        # Signaux vers les capteurs
+        lx = light_source[0] + (eye_pos[0]-light_source[0])*progress
+        ly = light_source[1] + (eye_pos[1]-light_source[1])*progress
+        sx = sound_source[0] + (ear_pos[0]-sound_source[0])*progress
+        sy = sound_source[1] + (ear_pos[1]-sound_source[1])*progress
+        pygame.draw.circle(screen, YELLOW, (int(lx), int(ly)), 12)
+        pygame.draw.circle(screen, ORANGE, (int(sx), int(sy)), 12)
+        draw_text_center("👁️ L’œil et 👂 l’oreille captent les signaux...", 60)
+        progress += speed
+        if progress >=1:
+            progress=0
+            stage=1
 
-        if event.type == pygame.MOUSEMOTION:
-            mx, my = pygame.mouse.get_pos()
-            if dragging_w1:
-                w1 = max(0, min(1, (mx - w1_area[0]) / 200))
-            if dragging_w2:
-                w2 = max(0, min(1, (mx - w2_area[0]) / 200))
+    elif stage == 1:
+        # Animal sur la ligne eye -> neurone
+        ex = eye_pos[0] + (neuron_pos[0]-eye_pos[0])*progress
+        ey = eye_pos[1] + (neuron_pos[1]-eye_pos[1])*progress
+        scale_factor = 1 + weights[0]   # taille selon poids
+        cat_size = (int(80*scale_factor), int(80*scale_factor))
+        cat_img = pygame.transform.smoothscale(cat_img_original, cat_size)
+        screen.blit(cat_img, (int(ex-cat_size[0]//2), int(ey-cat_size[1]//2)))
+        draw_arrow((eye_pos[0]+60, eye_pos[1]), (neuron_pos[0]-70, neuron_pos[1]-50), YELLOW)
+        draw_text_center("🐱 Le chat transporte le signal lumineux !", 60)
+        progress += speed
+        if progress>=1:
+            progress=0
+            stage=2
+
+    elif stage == 2:
+        # Animal sur la ligne oreille -> neurone
+        ax = ear_pos[0] + (neuron_pos[0]-ear_pos[0])*progress
+        ay = ear_pos[1] + (neuron_pos[1]-ear_pos[1])*progress
+        scale_factor = 1 + weights[1]
+        cat_size = (int(80*scale_factor), int(80*scale_factor))
+        cat_img = pygame.transform.smoothscale(cat_img_original, cat_size)
+        screen.blit(cat_img, (int(ax-cat_size[0]//2), int(ay-cat_size[1]//2)))
+        draw_arrow((ear_pos[0]+60, ear_pos[1]), (neuron_pos[0]-70, neuron_pos[1]+50), RED)
+        draw_text_center("🐱 Le chat transporte le signal sonore !", 60)
+        progress += speed
+        if progress>=1:
+            progress=0
+            stage=3
+
+    elif stage == 3:
+        # Sortie
+        nx = neuron_pos[0] + (output_pos[0]-neuron_pos[0])*progress
+        ny = neuron_pos[1] + (output_pos[1]-neuron_pos[1])*progress
+        pygame.draw.circle(screen, GREEN, (int(nx), int(ny)), 12)
+        draw_text_center("💡 La lampe s’allume si le signal est suffisant !", 60)
+        progress += speed
+        if progress>=1:
+            progress=0
+            stage=0
+
+    # --- Info calcul ---
+    info = font.render(f"Somme = x1*w1 + x2*w2 + bias = {weighted_sum:.2f}", True, BLACK)
+    screen.blit(info, (250, 550))
+
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
