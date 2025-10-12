@@ -54,7 +54,7 @@ while running:
         img = images[name]
         screen.blit(img, (pos[0]-30, pos[1]-30))  # centrer l'image
         text = font.render(name, True, BLACK)
-        screen.blit(text, (pos[0]+50, pos[1]-10))
+        screen.blit(text, (pos[0], pos[1]+50))
 
     # --- Texte explicatif ---
     info_text = big_font.render("Étape 1 : Les capteurs reçoivent les signaux !", True, BLACK)
