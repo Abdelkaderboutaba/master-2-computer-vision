@@ -36,7 +36,7 @@ d3.csv("us.csv").then(data =>{
           .attr("cx",d => xscale(d.population))
           .attr("cy",d => yscale(d.place)+16)
           .attr("r",5)
-          .attr("fill","steelblue")
+          .attr("fill","red")
 
     groupe.append("text")
           .attr("x",10)

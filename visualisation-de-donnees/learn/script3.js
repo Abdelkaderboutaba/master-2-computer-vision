@@ -13,16 +13,16 @@ const gr = svg.append("g")
 
 d3.csv("us.csv").then(data => {
 
-    data=data.slice(9,16)
+    data=data.slice(9,25)
 
     const yscale = d3.scaleLinear()
                      .domain([0,d3.max(data,d => d.population)])
-                     .range([700,0])
+                     .range([0,700])
 
     const xscale=d3.scaleBand()
                    .domain(data.map(d => d.place))
                    .range([0,600])
-                   .padding(0.2)
+                   .padding(0.5)
     
     gr.append("g")
       .attr("transform" , "translate(0,0)")
@@ -32,15 +32,25 @@ d3.csv("us.csv").then(data => {
       .attr("transform","translate(0,700)")
       .call(d3.axisBottom(xscale))
 
-    gr.selectAll("rect")
+    // gr.selectAll("rect")
+    //   .data(data)
+    //   .enter()
+    //   .append("rect")
+    //   .attr("x",d => xscale(d.place))
+    //   .attr("y",d =>700 - yscale(d.population))
+    //   .attr("height",d => yscale(d.population))
+    //   .attr("width",xscale.bandwidth)
+    //   .attr("fill" , "steelblue")
+
+    gr.selectAll("circle")
       .data(data)
       .enter()
-      .append("rect")
-      .attr("x",d => xscale(d.place))
-      .attr("y",d => yscale(d.population))
-      .attr("height",d => yscale(d.population))
-      .attr("width",30)
-      .attr("fill" , "steelblue")
+      .append("circle")
+      .attr("cx",d=>xscale(d.place))
+      .attr("cy",d=>700-yscale(d.population))
+      .attr("r",10)
+      .attr("fill","red")
+
 
 
 
