@@ -15,22 +15,22 @@ d3.csv("us.csv").then(data => {
 
     data=data.slice(9,25)
 
-    const yscale = d3.scaleLinear()
-                     .domain([0,d3.max(data,d => d.population)])
-                     .range([0,700])
+    // const yscale = d3.scaleLinear()
+    //                  .domain([0,d3.max(data,d => d.population)])
+    //                  .range([0,700])
 
-    const xscale=d3.scaleBand()
-                   .domain(data.map(d => d.place))
-                   .range([0,600])
-                   .padding(0.5)
+    // const xscale=d3.scaleBand()
+    //                .domain(data.map(d => d.place))
+    //                .range([0,600])
+    //                .padding(0.5)
     
-    gr.append("g")
-      .attr("transform" , "translate(0,0)")
-      .call(d3.axisLeft(yscale))
+    // gr.append("g")
+    //   .attr("transform" , "translate(0,0)")
+    //   .call(d3.axisLeft(yscale))
 
-    gr.append("g")
-      .attr("transform","translate(0,700)")
-      .call(d3.axisBottom(xscale))
+    // gr.append("g")
+    //   .attr("transform","translate(0,700)")
+    //   .call(d3.axisBottom(xscale))
 
     // gr.selectAll("rect")
     //   .data(data)
@@ -42,16 +42,56 @@ d3.csv("us.csv").then(data => {
     //   .attr("width",xscale.bandwidth)
     //   .attr("fill" , "steelblue")
 
+    // gr.selectAll("circle")
+    //   .data(data)
+    //   .enter()
+    //   .append("circle")
+    //   .attr("cx",d=>xscale(d.place))
+    //   .attr("cy",d=>700-yscale(d.population))
+    //   .attr("r",10)
+    //   .attr("fill","red")
+
+    const xscale = d3.scaleLinear()
+                     .domain([0,d3.max(data,d => d.population)])
+                     .range([0,600])
+
+    const yscale = d3.scaleBand()
+                     .domain(data.map(d=>d.place))
+                     .range([0,600])
+                     .padding(0.5)
+    
+    gr.append("g")
+      .attr("transform" , "translate(0,0)")
+      .call(d3.axisLeft(yscale))
+
+    gr.append("g")
+      .attr("transform", "translate(0,600)")
+      .call(d3.axisBottom(xscale))
+
+    // gr.selectAll("rect")
+    //   .data(data)
+    //   .enter()
+    //   .append("rect")
+    //   .attr("x",0)
+    //   .attr("y",d => yscale(d.place))
+    //   .attr("width",d=>xscale(d.population))
+    //   .attr("height",yscale.bandwidth())
+    //   .attr("fill","red")
+
     gr.selectAll("circle")
       .data(data)
       .enter()
       .append("circle")
-      .attr("cx",d=>xscale(d.place))
-      .attr("cy",d=>700-yscale(d.population))
+      .attr("cx",d=>xscale(d.population))
+      .attr("cy",d=>yscale(d.place))
       .attr("r",10)
-      .attr("fill","red")
+      .attr("fill" , "red")
 
 
+    
+
+                     
+                     
 
 
 })
