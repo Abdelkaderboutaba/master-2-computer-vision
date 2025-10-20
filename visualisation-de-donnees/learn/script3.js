@@ -1,70 +1,47 @@
 const svg = d3.select("body")
               .append("svg")
-              .attr("width",500)
-              .attr("height",500)
+              .attr("width",1500)
+              .attr("height",1500)
               .style("background-color","grey")
 
 
-
-
-const groupe1 = svg.append("g")
-                   .attr( "transform" , "translate(20,50)")
+const gr = svg.append("g")
+              .attr("transform","translate(70,70)")
 
 
 
 
 d3.csv("us.csv").then(data => {
 
-    p=[1,2,3,4,5,6,7,8]
+    data=data.slice(9,16)
+
+    const yscale = d3.scaleLinear()
+                     .domain([0,d3.max(data,d => d.population)])
+                     .range([700,0])
+
+    const xscale=d3.scaleBand()
+                   .domain(data.map(d => d.place))
+                   .range([0,600])
+                   .padding(0.2)
+    
+    gr.append("g")
+      .attr("transform" , "translate(0,0)")
+      .call(d3.axisLeft(yscale))
+
+    gr.append("g")
+      .attr("transform","translate(0,700)")
+      .call(d3.axisBottom(xscale))
+
+    gr.selectAll("rect")
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("x",d => xscale(d.place))
+      .attr("y",d => yscale(d.population))
+      .attr("height",d => yscale(d.population))
+      .attr("width",30)
+      .attr("fill" , "steelblue")
 
 
-    groupe1.selectAll("rect")
-           .data(data)
-           .enter()
-           .append("rect")
-           .attr("height",10)
-           .attr("width",d => d.population/10000)
-           .attr("y",(d,i) => i*20+10)
-           .attr("fill","blue")
 
-    
-    const svg1 = d3.select("body")
-                   .append("svg")
-                   .attr("height",200)
-                   .attr("width",200)
-                   .style("background-color","grey")
-    width=200
-    height=200
-    
-    svg1.selectAll("rect")
-        .data(data)
-        .enter()
-        .append("rect")
-        .attr("y",(d,i) => i*20 +10 )
-        .attr("height",5)
-        .attr("width",d => d.population/100000)
-        .attr("fill","blue")
-    
-    
-    const svg2=d3.select("body")
-                 .append("svg")
-                 .attr("height",100)
-                 .attr("width",100)
-                 .style("background-color","grey")
-
-    const groups=svg2.selectAll("g")
-                   .data(p)
-                   .enter()
-                   .append("g")
-                   .attr("transform" , (d,i) =>`translate(${i*10+20},50)`)
-    
-    groups.append("circle")
-          .attr("r",2)
-          .attr("fill","steelblue")
-    
-    
-    
-    
-    
-    
 })
