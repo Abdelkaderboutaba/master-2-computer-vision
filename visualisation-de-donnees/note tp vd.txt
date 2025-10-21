@@ -1,0 +1,5 @@
+tp3 , faire une animation de tri par permutation du cahrt part 
+
+function transition (pour faire le changement ): on peu changer le temps de lanimation de permutation 
+
+

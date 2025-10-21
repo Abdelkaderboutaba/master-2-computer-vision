@@ -45,7 +45,7 @@ d3.csv("us.csv").then(data =>{
           .attr("font-size","20px")
 
     groupe.append("text")
-          .attr("x",500)
+          .attr("x",510)
           .attr("y",500)
           .text("(population)")
           .attr("font-size","20px")
