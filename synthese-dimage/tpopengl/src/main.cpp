@@ -272,7 +272,7 @@ void render() {
         case 1: // Vue par défaut - caméra éloignée
             camX = 0.0f; camY = 0.0f; camZ = 5.0f;
             lookX = 0.0f; lookY = 0.0f; lookZ = 0.0f;
-            myLookAt(7.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f);
+            myLookAt(7.0f, 5.0f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f);
 
             break;
         case 2: // Vue rapprochée
