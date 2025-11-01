@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Perceptron interactif pour enfants</title>
+<style>
+  :root{
+    --bg:#FFF9F2;
+    --card:#FFFFFF;
+    --accent:#ff7a59;
+    --accent2:#ffd166;
+    --muted:#6b6b6b;
+    --good:#a2f5c7;
+    --bad:#ffb3b3;
+    --shadow: 0 6px 18px rgba(0,0,0,0.08);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  body{
+    margin:0;
+    padding:20px;
+    background: linear-gradient(180deg,#FFF9F2 0%, #FFF3EA 100%);
+    color:#2b2b2b;
+  }
+
+  .container{
+    max-width:980px;
+    margin:12px auto;
+    display:grid;
+    grid-template-columns: 1fr 420px;
+    gap:18px;
+    align-items:start;
+  }
+
+  header{
+    grid-column: 1/ -1;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  h1{ margin:0; font-size:20px; color:var(--accent); }
+  p.lead{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+
+  .card{
+    background:var(--card);
+    padding:16px;
+    border-radius:14px;
+    box-shadow:var(--shadow);
+  }
+
+  /* Left: main explanation + controls */
+  .left .controls{ display:grid; gap:14px; }
+
+  .row{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  label { font-size:13px; color:var(--muted); }
+  .small { font-size:12px; color:var(--muted); }
+
+  .slider-group{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+
+  input[type="range"]{
+    width:220px;
+  }
+
+  .big-value{
+    background:#f6f6f6;
+    border-radius:8px;
+    padding:6px 10px;
+    min-width:70px;
+    text-align:center;
+    font-weight:700;
+    color:#222;
+  }
+
+  /* Neuron visualization */
+  .neuron{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    justify-content:flex-start;
+  }
+
+  .inputs {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .input-box{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .input-toggle{
+    width:46px;
+    height:28px;
+    border-radius:20px;
+    background:#eee;
+    display:flex;
+    align-items:center;
+    padding:3px;
+    cursor:pointer;
+  }
+  .input-toggle .dot{
+    width:20px; height:20px; border-radius:50%; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.08);
+    transition:transform .15s ease;
+  }
+  .input-toggle.on{ background:var(--accent2); }
+  .input-toggle.on .dot{ transform:translateX(18px); }
+
+  .neuron-visual{
+    width:160px; height:160px; border-radius:50%;
+    background: linear-gradient(180deg,#fff 0%, #ffe9db 100%);
+    border:4px solid #ffd3bf;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    box-shadow: 0 8px 30px rgba(255,110,70,0.08);
+  }
+  .sum { font-size:18px; font-weight:700; }
+  .output {
+    margin-top:6px;
+    padding:6px 10px;
+    border-radius:10px;
+    font-weight:700;
+  }
+
+  /* Right column: weights and actions */
+  .right .weights { display:flex; flex-direction:column; gap:14px; }
+  .weight-item { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+  .button-row{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+  button{
+    background:var(--accent);
+    color:white;
+    border:0;
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+  }
+  button.secondary{
+    background:white;
+    border:1px solid #eee;
+    color:#2b2b2b;
+  }
+
+  .result-box{
+    margin-top:12px;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:700;
+  }
+
+  footer{
+    grid-column:1/-1;
+    margin-top:14px;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  /* Responsive */
+  @media (max-width:900px){
+    .container{ grid-template-columns:1fr; padding:12px; }
+    .right{ order:2; }
+    .left{ order:1; }
+  }
+
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Le Perceptron — facile et amusant 🎈</h1>
+        <p class="lead">Change les poids, le biais et les entrées pour voir comment la machine décide.</p>
+      </div>
+      <div class="small">TP — Atelier interactif</div>
+    </header>
+
+    <!-- LEFT: controls + visualization -->
+    <section class="card left">
+      <div class="controls">
+        <div>
+          <strong>Que fait le perceptron ?</strong>
+          <p class="small">Il additionne les entrées *×* leurs poids, ajoute un biais, et décide si le total est suffisamment grand pour répondre "Oui" (1) ou "Non" (0).</p>
+        </div>
+
+        <div class="neuron">
+          <div class="inputs">
+            <div class="input-box">
+              <div>
+                <label>Entrée 1</label><br>
+                <div class="input-toggle" id="toggle-x1" data-val="1" role="button" aria-pressed="true">
+                  <div class="dot"></div>
+                </div>
+              </div>
+              <div class="small">valeur: <span id="x1-val">1</span></div>
+            </div>
+
+            <div class="input-box">
+              <div>
+                <label>Entrée 2</label><br>
+                <div class="input-toggle on" id="toggle-x2" data-val="1" role="button" aria-pressed="true">
+                  <div class="dot"></div>
+                </div>
+              </div>
+              <div class="small">valeur: <span id="x2-val">1</span></div>
+            </div>
+            <div class="small"> (Clique sur la bulle pour changer 0 ↔ 1) </div>
+          </div>
+
+          <div style="width:12px;"></div>
+
+          <div class="neuron-visual">
+            <div style="font-size:13px; color:var(--muted)">Somme pondérée</div>
+            <div class="sum" id="sum-display">0.00</div>
+            <div id="output-display" class="output" style="background:#eee;border-radius:8px">Sortie: 0</div>
+          </div>
+        </div>
+
+        <div>
+          <strong>Explication courte</strong>
+          <p class="small">Formule: <code>output = step(w1×x1 + w2×x2 + b)</code>. La fonction <em>step</em> renvoie 1 si la somme ≥ 0, sinon 0.</p>
+        </div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div>
+            <label>Target (préférence)</label><br>
+            <select id="target">
+              <option value="1">1 — Je veux que le perceptron dise OUI</option>
+              <option value="0">0 — Je veux qu'il dise NON</option>
+            </select>
+          </div>
+          <div>
+            <label>Learning rate</label><br>
+            <select id="lr">
+              <option value="1">1 (rapide)</option>
+              <option value="0.5">0.5</option>
+              <option value="0.1">0.1</option>
+            </select>
+          </div>
+          <div style="align-self:end;">
+            <button id="train-step">Appliquer 1 étape d'entraînement</button>
+          </div>
+        </div>
+
+        <div class="small" id="train-info" style="margin-top:6px;color:var(--muted)"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: weights, sliders, actions -->
+    <aside class="card right">
+      <div>
+        <strong>Poids & Biais</strong>
+        <p class="small">Modifie les curseurs pour changer w1, w2 et b.</p>
+      </div>
+
+      <div class="weights">
+        <div class="weight-item">
+          <div>
+            <label>W1</label><br><div class="small">Poids appliqué à l'entrée 1</div>
+          </div>
+          <div>
+            <input id="w1" type="range" min="-5" max="5" step="0.1" value="1.0">
+            <div class="big-value" id="w1-val">1.0</div>
+          </div>
+        </div>
+
+        <div class="weight-item">
+          <div>
+            <label>W2</label><br><div class="small">Poids appliqué à l'entrée 2</div>
+          </div>
+          <div>
+            <input id="w2" type="range" min="-5" max="5" step="0.1" value="1.0">
+            <div class="big-value" id="w2-val">1.0</div>
+          </div>
+        </div>
+
+        <div class="weight-item">
+          <div>
+            <label>Biais (b)</label><br><div class="small">Décale la somme vers + ou -</div>
+          </div>
+          <div>
+            <input id="b" type="range" min="-10" max="10" step="0.1" value="-1.0">
+            <div class="big-value" id="b-val">-1.0</div>
+          </div>
+        </div>
+
+        <div style="margin-top:4px;">
+          <div class="button-row">
+            <button id="randomize">Aléatoire</button>
+            <button class="secondary" id="reset">Réinitialiser</button>
+            <button class="secondary" id="exemple-and">Exemple: ET</button>
+            <button class="secondary" id="exemple-or">Exemple: OU</button>
+          </div>
+        </div>
+
+        <div id="status-box" class="result-box" style="background:#fff;">Essaie : modifie un poids puis clique sur "Appliquer 1 étape d'entraînement".</div>
+      </div>
+    </aside>
+
+    <footer>
+      <strong>Petit guide pour l'animateur :</strong>
+      <ul>
+        <li>Montre d'abord la somme (somme pondérée) puis la sortie (0 ou 1).</li>
+        <li>Demande aux enfants de deviner la sortie avant de cliquer sur calculer.</li>
+        <li>Utilise "Appliquer 1 étape d'entraînement" pour montrer comment le perceptron corrige ses poids vers la cible choisie.</li>
+      </ul>
+    </footer>
+  </div>
+
+<script>
+/* Perceptron interactif - JS
+   - x1, x2 sont des entrées (0 ou 1)
+   - w1, w2, b modifiables
+   - activation: step(sum) -> 1 si sum >= 0
+   - perceptron learning rule: w += lr * (target - output) * x, b += lr * (target - output)
+*/
+
+const state = {
+  x1: 1,
+  x2: 1,
+  w1: parseFloat(document.getElementById('w1').value),
+  w2: parseFloat(document.getElementById('w2').value),
+  b: parseFloat(document.getElementById('b').value)
+};
+
+const el = {
+  x1Val: document.getElementById('x1-val'),
+  x2Val: document.getElementById('x2-val'),
+  toggleX1: document.getElementById('toggle-x1'),
+  toggleX2: document.getElementById('toggle-x2'),
+  w1: document.getElementById('w1'),
+  w2: document.getElementById('w2'),
+  b: document.getElementById('b'),
+  w1Val: document.getElementById('w1-val'),
+  w2Val: document.getElementById('w2-val'),
+  bVal: document.getElementById('b-val'),
+  sumDisplay: document.getElementById('sum-display'),
+  outputDisplay: document.getElementById('output-display'),
+  statusBox: document.getElementById('status-box'),
+  trainStep: document.getElementById('train-step'),
+  trainInfo: document.getElementById('train-info'),
+  lr: document.getElementById('lr'),
+  target: document.getElementById('target')
+};
+
+// helper: compute weighted sum and output
+function compute(){
+  const s = state.w1 * state.x1 + state.w2 * state.x2 + state.b;
+  const out = s >= 0 ? 1 : 0;
+  return { s, out };
+}
+
+function updateUI(){
+  el.x1Val.textContent = state.x1;
+  el.x2Val.textContent = state.x2;
+  el.w1Val.textContent = Number(state.w1).toFixed(2);
+  el.w2Val.textContent = Number(state.w2).toFixed(2);
+  el.bVal.textContent = Number(state.b).toFixed(2);
+
+  const { s, out } = compute();
+  el.sumDisplay.textContent = Number(s).toFixed(2);
+  el.outputDisplay.textContent = 'Sortie: ' + out;
+
+  // coloring output
+  if(out === parseInt(el.target.value)){
+    el.outputDisplay.style.background = 'var(--good)';
+    el.statusBox.style.background = 'var(--good)';
+    el.statusBox.textContent = 'Bravo ! Le perceptron donne la bonne réponse 🎉';
+  } else {
+    el.outputDisplay.style.background = 'var(--bad)';
+    el.statusBox.style.background = 'var(--bad)';
+    el.statusBox.textContent = 'Le perceptron se trompe — on peut l\'entraîner.';
+  }
+
+  el.trainInfo.textContent = `w1=${Number(state.w1).toFixed(2)} • w2=${Number(state.w2).toFixed(2)} • b=${Number(state.b).toFixed(2)}`;
+}
+
+// toggles: click to change 0 ↔ 1
+function toggleInput(which){
+  if(which === 1){
+    state.x1 = state.x1 === 1 ? 0 : 1;
+    el.toggleX1.classList.toggle('on', state.x1 === 1);
+    el.toggleX1.setAttribute('aria-pressed', state.x1 === 1);
+  } else {
+    state.x2 = state.x2 === 1 ? 0 : 1;
+    el.toggleX2.classList.toggle('on', state.x2 === 1);
+    el.toggleX2.setAttribute('aria-pressed', state.x2 === 1);
+  }
+  updateUI();
+}
+
+// connect slider changes
+el.w1.addEventListener('input', (e)=>{ state.w1 = parseFloat(e.target.value); updateUI();});
+el.w2.addEventListener('input', (e)=>{ state.w2 = parseFloat(e.target.value); updateUI();});
+el.b.addEventListener('input', (e)=>{ state.b = parseFloat(e.target.value); updateUI();});
+
+// toggle buttons
+el.toggleX1.addEventListener('click', ()=> toggleInput(1));
+el.toggleX2.addEventListener('click', ()=> toggleInput(2));
+
+// randomize
+document.getElementById('randomize').addEventListener('click', ()=>{
+  state.w1 = Number((Math.random()*10 - 5).toFixed(2));
+  state.w2 = Number((Math.random()*10 - 5).toFixed(2));
+  state.b  = Number((Math.random()*20 - 10).toFixed(2));
+  el.w1.value = state.w1; el.w2.value = state.w2; el.b.value = state.b;
+  updateUI();
+});
+
+// reset
+document.getElementById('reset').addEventListener('click', ()=>{
+  state.w1 = 1; state.w2 = 1; state.b = -1;
+  el.w1.value = state.w1; el.w2.value = state.w2; el.b.value = state.b;
+  updateUI();
+});
+
+// examples: AND / OR
+document.getElementById('exemple-and').addEventListener('click', ()=>{
+  // paramètres classiques pour AND
+  state.w1 = 1.0; state.w2 = 1.0; state.b = -1.5;
+  el.w1.value = state.w1; el.w2.value = state.w2; el.b.value = state.b;
+  el.target.value = '1';
+  updateUI();
+  el.statusBox.textContent = 'Exemple: AND (essaie x1=1 et x2=1 pour obtenir 1)';
+});
+
+document.getElementById('exemple-or').addEventListener('click', ()=>{
+  // paramètres classiques pour OR
+  state.w1 = 1.0; state.w2 = 1.0; state.b = -0.5;
+  el.w1.value = state.w1; el.w2.value = state.w2; el.b.value = state.b;
+  el.target.value = '1';
+  updateUI();
+  el.statusBox.textContent = 'Exemple: OR (essaie x1=1 ou x2=1 pour obtenir 1)';
+});
+
+// Training step: perceptron learning rule (single step)
+el.trainStep.addEventListener('click', ()=>{
+  const lr = parseFloat(el.lr.value);
+  const target = parseInt(el.target.value);
+  const { s, out } = compute();
+  const error = target - out;
+
+  if(error === 0){
+    el.statusBox.textContent = 'Le perceptron est déjà correct pour cet exemple ✅';
+    updateUI();
+    return;
+  }
+
+  // update weights and bias
+  state.w1 = Number((state.w1 + lr * error * state.x1).toFixed(4));
+  state.w2 = Number((state.w2 + lr * error * state.x2).toFixed(4));
+  state.b  = Number((state.b + lr * error * 1).toFixed(4)); // bias update
+
+  // reflect to sliders
+  el.w1.value = state.w1;
+  el.w2.value = state.w2;
+  el.b.value = state.b;
+
+  el.trainInfo.textContent = `Etat après entraînement: erreur=${error}. Mise à jour appliquée.`;
+  updateUI();
+});
+
+// initial UI
+updateUI();
+</script>
+</body>
+</html>
