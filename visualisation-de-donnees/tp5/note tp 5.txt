@@ -1,0 +1,28 @@
+pour chaque x , on vs calculer f(x) 
+f(x) = (1/n*h) somme k((xj-xi)/h)
+
+h = bandwith (sigma ) 
+k = noyaux gausian 
+k(t)=(1/(2*pi))*e^(-t^2/2) 
+ 
+n represnte tout la population 
+
+xi un echantilon 
+
+
+
+
+funciton f(x)
+
+
+calculer gasuian pour chaque echatian 
+
+xi les donnes real dapres la dataset 
+
+pour chaque xi on claclue f(x)
+
+n=nombre des echantian 
+
+h bandwith 
+
+k
