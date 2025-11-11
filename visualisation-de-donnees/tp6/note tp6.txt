@@ -1,0 +1,28 @@
+lelemnt qui se trouve en 25 % represent q1 
+
+la mediane represnt 50 % 
+
+q3 represnt 75% 
+
+avg
+
+min 
+
+max 
+
+iqr q3 - q1 
+
+on compare le min avec q1 - (1.5 x iqr) , si le min est inferieur on prend le min sinon la valeur de lequation 
+
+on compare le max avec q3 + (1.5 x IQR ) si le max est inferieru on prend le max sinon la valeur de lequation 
+
+---------------------------------
+
+bubble plot 
+axex x length
+axe y height 
+
+size buble , nombre anne 
+couleur c'esrt le sexe 
+
+et ajouter un etiquette a la buble que le curseur et sur la bubble 
