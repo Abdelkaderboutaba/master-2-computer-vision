@@ -1,0 +1,28 @@
+on veut mentreer les diffenret association 
+reduire la demension des variable pour avoir des composante principale 
+
+9 minireaux 
+2 composante pricnipale
+ 
+1 etape : standarisation 
+calculer le z score de chawue variable 
+exemple : (x1,x2,x3,x4) --> (x1',x2',x3',x4')
+
+2 - matrice de covariance 
+4x4 
+
+3 - calcule eigne values , eigne vectores
+
+on trie lles lemda (lembda 1 est la plus grande ) 
+
+on prend les deux plus grand lembda
+
+feature vector : 
+
+projection  [(x1',x2',x3',x4') * feature vector ] on obtient 2d scater pot (les nouveu coordonee)
+
+
+
+on fait une autre visualisation des vector de cahque attribut (contribution sur pc1 et pc2 ) 
+
+
