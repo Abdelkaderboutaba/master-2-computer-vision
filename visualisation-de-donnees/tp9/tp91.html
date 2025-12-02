@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Algeria Wilayas Map - Edge Coloring</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #f5f5f5;
+      }
+      #container {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+
+    <script type="module">
+      import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+      import * as topojson from "https://cdn.jsdelivr.net/npm/topojson-client@3/+esm";
+
+      const width = 800;
+      const height = 800;
+      
+      // Distinct colors for the edges
+      const edgeColors = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#9400D3", "#00FFFF","#00FAQ50","#00QWER5","#98HH23R","#X34VBN","#1ASD34","#"];
+
+      d3.json("./algeria.json").then((topology) => {
+        const svg = d3
+          .select("#container")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+
+        // 1. Setup Projection
+        // We need a geometry to fit the projection first.
+        const geojsonFull = topojson.feature(topology, topology.objects.countries);
+        const projection = d3.geoMercator().fitSize([width, height], geojsonFull);
+        const path = d3.geoPath(projection);
+
+        // 2. Draw the Polygons (Background only, no borders)
+        svg
+          .append("g")
+          .selectAll("path")
+          .data(geojsonFull.features)
+          .join("path")
+          .attr("d", path)
+          .attr("fill", "#ffffff") // Light gray fill
+          .attr("stroke", "none");
+
+        // 3. Extract Arcs and Connectivity
+        // TopoJSON 'arcs' are the shared line segments. We need to identify them.
+        // We use the raw topology data to find which arcs share start/end points.
+        
+        const arcs = topology.arcs;
+        const arcCount = arcs.length;
+        
+        // This array will store the "node" (start/end point) for every arc
+        // Format: [ [startNodeHash, endNodeHash], ... ]
+        const arcEndpoints = [];
+        
+        // Helper to create a unique hash for a coordinate point
+        // (Rounding ensures tiny floating point diffs don't break it)
+        const hashPoint = (p) => `${Math.round(p[0]*1000)},${Math.round(p[1]*1000)}`;
+
+        // Traverse raw arcs to find their start and end points
+        for (let i = 0; i < arcCount; i++) {
+            let arc = arcs[i];
+            // Decode the arc to get actual coordinates
+            // (TopoJSON stores deltas, we need to decode roughly to match points)
+            // Note: We don't need perfect lat/long, just topological consistency.
+            // But topojson-client provides us tools to mesh specific arcs.
+            
+            // Actually, a simpler way is checking the transform/scale, 
+            // but let's rely on the topology structure directly if possible.
+            // The library doesn't expose a simple "arc connectivity graph".
+            // We have to build it manually by decoding the first and last point of each arc.
+        }
+
+        // --- SIMPLIFIED APPROACH: Greedy Coloring on the Mesh ---
+        // Since extracting raw TopoJSON connectivity manually is complex, 
+        // we will iterate through the geometry objects to build an adjacency graph of Arcs.
+
+        // Map: Arc Index -> Set of Neighboring Arc Indices
+        const arcAdjacency = new Map();
+
+        // Helper to add adjacency
+        const addAdj = (a, b) => {
+            if (a === b) return;
+            // Handle direction bit flipping in TopoJSON (negative indices)
+            const realA = a < 0 ? ~a : a;
+            const realB = b < 0 ? ~b : b;
+            
+            if (!arcAdjacency.has(realA)) arcAdjacency.set(realA, new Set());
+            if (!arcAdjacency.has(realB)) arcAdjacency.set(realB, new Set());
+            
+            arcAdjacency.get(realA).add(realB);
+            arcAdjacency.get(realB).add(realA);
+        };
+
+        // Iterate over every polygon geometry
+        topology.objects.countries.geometries.forEach(geo => {
+             // 'arcs' is an array of arrays of arc indices
+             const geomArcs = geo.type === "Polygon" ? geo.arcs : geo.arcs.flat();
+             
+             geomArcs.forEach(ring => {
+                 for (let i = 0; i < ring.length; i++) {
+                     const currentArc = ring[i];
+                     const nextArc = ring[(i + 1) % ring.length];
+                     const prevArc = ring[(i - 1 + ring.length) % ring.length];
+                     
+                     // In a polygon ring, arcs are connected in sequence.
+                     // The end of currentArc touches the start of nextArc.
+                     addAdj(currentArc, nextArc);
+                     addAdj(currentArc, prevArc);
+                 }
+             });
+        });
+
+        // 4. Color the Arcs
+        const arcColors = new Map(); // Arc Index -> Color Index (int)
+
+        // Iterate through all arcs (by index 0 to length-1)
+        for(let i=0; i<topology.arcs.length; i++) {
+            const neighbors = arcAdjacency.get(i) || new Set();
+            
+            // Find used colors among neighbors
+            const usedColors = new Set();
+            neighbors.forEach(n => {
+                if (arcColors.has(n)) usedColors.add(arcColors.get(n));
+            });
+
+            // Pick lowest unused color
+            let color = 0;
+            while(usedColors.has(color)) {
+                color++;
+            }
+            arcColors.set(i, color);
+        }
+
+        // 5. Draw the Arcs Individually
+        // We convert each specific arc index into a GeoJSON LineString to draw it.
+        
+        svg.append("g")
+           .selectAll("path")
+           .data(d3.range(topology.arcs.length)) // Data is just [0, 1, 2, ... n]
+           .join("path")
+           .attr("d", (i) => {
+               // meshArc converts a specific arc index into a feature
+               return path(topojson.mesh(topology, topology.objects.countries, (a, b) => {
+                   // This is a trick: We only return true if the internal arc index matches 'i'
+                   // TopoJSON mesh logic is complex, usually we'd use feature() 
+                   // but feature() merges arcs.
+                   
+                   // BETTER APPROACH: convert the specific arc to a LineString
+                   // topojson.feature can't extract a single arc easily.
+                   // We have to use the low-level geometry construction.
+                   return false; 
+               }));
+           });
+           
+        // --- CORRECT DRAWING METHOD ---
+        // The previous drawing block logic is flawed because topojson doesn't easily isolate single arcs via mesh().
+        // We must construct the LineString manually using topojson.feature's internal logic 
+        // or simply iterate the converted features? No, that merges arcs.
+        
+        // Let's use `topojson.mesh` to verify connections, but we need to DRAW specific arcs.
+        // Actually, let's use a simpler method: 
+        // Construct a MultiLineString for each Color Group.
+
+        edgeColors.forEach((hexColor, colorIdx) => {
+             // Filter for arcs that have this color index
+             const arcsWithThisColor = [];
+             for(let i=0; i<topology.arcs.length; i++) {
+                 if(arcColors.get(i) === colorIdx) {
+                    arcsWithThisColor.push(i); // Store the index
+                 }
+             }
+
+             // We need a custom filter function for topojson.mesh
+             // The filter function receives (a, b). These are the geometry objects on either side.
+             // This doesn't give us the ARC INDEX directly. 
+             
+             // ALTERNATIVE: Use the low-level topojson client API to decode specific arcs.
+             // Since we have the arc indices, let's manually build GeoJSON LineStrings.
+             
+             const lineStrings = {
+                 type: "FeatureCollection",
+                 features: arcsWithThisColor.map(i => {
+                     // Topojson library doesn't expose a simple "getArc(i)" public method easily 
+                     // that returns GeoJSON. We have to reconstruct it.
+                     // However, we can trick topojson.mesh.
+                     
+                     // BUT, for simplicity in D3 without deep diving topojson internals:
+                     // We will assume that if we pass a filter to mesh that returns true
+                     // ONLY for geometries sharing a specific arc, it might work? No.
+                     
+                     return topojson.feature(topology, {
+                        type: "LineString",
+                        arcs: [i] // Construct a temporary geometry object using this one arc
+                     });
+                 })
+             };
+
+             svg.append("g")
+                .selectAll("path")
+                .data(lineStrings.features)
+                .join("path")
+                .attr("d", path)
+                .attr("fill", "none")
+                .attr("stroke", hexColor)
+                .attr("stroke-width", 2)
+                .attr("stroke-linecap", "round");
+        });
+        
+        // 6. Draw Outer Border (optional, usually looks better in solid black)
+        const outerMesh = topojson.mesh(topology, topology.objects.countries, (a, b) => a === b);
+        svg.append("path")
+           .datum(outerMesh)
+           .attr("d", path)
+           .attr("stroke", "black")
+           .attr("stroke-width", 3)
+           .attr("fill", "none");
+
+      });
+    </script>
+  </body>
+</html>

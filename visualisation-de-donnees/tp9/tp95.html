@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Algeria Map Frontiers</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #f0f0f0;
+      }
+      svg {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      d3.json("algeria.json").then((topoData) => {
+        // Convert TopoJSON arcs into absolute coordinates
+        const deltaArcs = topoData.arcs;
+        const trans = topoData.transform;
+
+        const arcsToCoords = (arc) => {
+          let current = [0, 0];
+          return arc.map(([dx, dy]) => {
+            current = [current[0] + dx, current[1] + dy];
+            return [
+              current[0] * trans.scale[0] + trans.translate[0],
+              current[1] * trans.scale[1] + trans.translate[1],
+            ];
+          });
+        };
+
+        const allCoords = deltaArcs.map(arcsToCoords);
+
+        const canvasWidth = window.innerWidth;
+        const canvasHeight = window.innerHeight;
+
+        const svg = d3
+          .select("body")
+          .append("svg")
+          .attr("width", canvasWidth)
+          .attr("height", canvasHeight);
+
+        // Compute bounding box
+        let lonMin = Infinity,
+          lonMax = -Infinity;
+        let latMin = Infinity,
+          latMax = -Infinity;
+
+        allCoords.forEach((arc) =>
+          arc.forEach(([lon, lat]) => {
+            lonMin = Math.min(lonMin, lon);
+            lonMax = Math.max(lonMax, lon);
+            latMin = Math.min(latMin, lat);
+            latMax = Math.max(latMax, lat);
+          })
+        );
+
+        // Projection
+        const projection = d3.geoMercator();
+        const bbox = [
+          [lonMin, latMin],
+          [lonMax, latMax],
+        ];
+        projection.fitExtent(
+          [
+            [50, 50],
+            [canvasWidth - 50, canvasHeight - 50],
+          ],
+          {
+            type: "LineString",
+            coordinates: [bbox[0], bbox[1]],
+          }
+        );
+
+        const borderColors = [
+          "#e6194b",
+          "#3cb44b",
+          "#ffe119",
+          "#4363d8",
+          "#f58231",
+          "#911eb4",
+          "#46f0f0",
+          "#f032e6",
+          "#bcf60c",
+          "#fabebe",
+          "#008080",
+          "#e6beff",
+          "#9a6324",
+          "#fffac8",
+          "#800000",
+          "#aaffc3",
+          "#808000",
+          "#ffd8b1",
+          "#000075",
+          "#808080",
+        ];
+        const colorScale = d3.scaleOrdinal(borderColors);
+
+        // Get geometries
+        const regions =
+          topoData.objects.countries?.geometries ||
+          topoData.objects.regions.geometries;
+
+        const arcUsageCount = {};
+        regions.forEach((reg) => {
+          reg.arcs.flat().forEach((idx) => {
+            const revIdx = -idx - 1;
+            arcUsageCount[idx] = (arcUsageCount[idx] || 0) + 1;
+            arcUsageCount[revIdx] = (arcUsageCount[revIdx] || 0) + 1;
+          });
+        });
+
+        const arcColorMap = {};
+        let nextColorIndex = 0;
+
+        Object.keys(arcUsageCount).forEach((arcKey) => {
+          const idx = parseInt(arcKey);
+          const posIdx = idx >= 0 ? idx : -idx - 1;
+
+          if (arcUsageCount[arcKey] > 1 && !arcColorMap[posIdx]) {
+            arcColorMap[posIdx] = colorScale(nextColorIndex++);
+          }
+        });
+
+        // Draw arcs
+        svg
+          .selectAll("path")
+          .data(allCoords)
+          .join("path")
+          .attr("d", (arc) => {
+            const lineGen = d3
+              .line()
+              .x((d) => projection(d)[0])
+              .y((d) => projection(d)[1]);
+            return lineGen(arc);
+          })
+          .attr("fill", "none")
+          .attr("stroke", (d, i) => {
+            const shared =
+              (arcUsageCount[i] || 0) > 1 || (arcUsageCount[-i - 1] || 0) > 1;
+            return shared ? arcColorMap[i] : "#222";
+          })
+          .attr("stroke-width", 2);
+      });
+    </script>
+  </body>
+</html>

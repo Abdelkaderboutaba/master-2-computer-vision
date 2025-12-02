@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glass Elements Pie Chart</title>
+    <title>Coffee Analysis - Roast Distribution</title>
 
     <style>
         body {
             font-family: "Segoe UI", Tahoma, sans-serif;
             margin: 0;
             padding: 20px;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,9 +19,9 @@
 
         #container {
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             max-width: 1100px;
             width: 100%;
             display: flex;
@@ -28,36 +29,84 @@
             align-items: center;
         }
 
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: #f9f9f9;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-box h3 {
+            margin: 0 0 5px 0;
+            color: #8B4513;
+            font-size: 24px;
+        }
+
+        .stat-box p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+
         .legend {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             margin-top: 20px;
-            gap: 12px;
-            padding: 10px 15px;
+            gap: 15px;
+            padding: 15px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
             gap: 8px;
+            padding: 8px 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .legend-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .legend-color {
-            width: 18px;
-            height: 18px;
-            border-radius: 3px;
+            width: 24px;
+            height: 24px;
+            border-radius: 5px;
         }
 
         #tooltip {
             position: absolute;
             display: none;
-            padding: 8px 12px;
-            background: rgba(0,0,0,0.75);
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.9);
             color: white;
-            border-radius: 4px;
+            border-radius: 8px;
             font-size: 14px;
             pointer-events: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        #error {
+            color: #d32f2f;
+            padding: 20px;
+            text-align: center;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -69,132 +118,218 @@
 <script type="module">
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
-// Load CSV
-const rows = await d3.csv("./glass.csv", d3.autoType);
-if (!rows.length) throw new Error("glass.csv missing");
+try {
+    // Load CSV
+    const rows = await d3.csv("./coffee_analysis.csv", d3.autoType);
+    
+    if (!rows.length) {
+        throw new Error("coffee_analysis.csv is empty or missing");
+    }
 
-const elementColumns = ["Na","Mg","Al","Si","K","Ca","Ba","Fe"];
+    // Count coffees by roast type
+    const roastCounts = d3.rollup(
+        rows,
+        v => ({
+            count: v.length,
+            avgRating: d3.mean(v, d => d.rating) || 0
+        }),
+        d => d.roast
+    );
 
-const elementMeans = elementColumns.map(e => ({
-    element: e,
-    value: d3.mean(rows.map(d => d[e]).filter(Number.isFinite)) ?? 0
-}));
+    const data = Array.from(roastCounts, ([roast, stats]) => ({
+        roast: roast || "Unknown",
+        count: stats.count,
+        avgRating: stats.avgRating
+    })).sort((a, b) => b.count - a.count);
 
-const filteredData = elementMeans.filter(d => d.value > 0.01);
+    // Calculate total stats
+    const totalCoffees = rows.length;
+    const avgRatingAll = d3.mean(rows, d => d.rating) || 0;
+    const uniqueCountries = new Set(rows.map(d => d.loc_country)).size;
 
-// SVG setup
-const width = 650, height = 650;
-const radius = Math.min(width, height) / 2 - 40;
+    // SVG setup
+    const width = 700, height = 700;
+    const radius = Math.min(width, height) / 2 - 60;
 
-// Better color palette
-const colorScale = d3.scaleOrdinal()
-    .domain(filteredData.map(d => d.element))
-    .range(d3.schemeSet2);
+    // Color palette - coffee roast colors
+    const colorScale = d3.scaleOrdinal()
+        .domain(data.map(d => d.roast))
+        .range(['#F4E4C1', '#E0C097', '#C8A882', '#B8956A', '#A67B5B', '#8B6F47', '#6F5643', '#4A3728']);
 
-// Tooltip
-const tooltip = d3.select("#tooltip");
+    // Tooltip
+    const tooltip = d3.select("#tooltip");
 
-// Create SVG
-const svg = d3.create("svg")
-    .attr("width", width)
-    .attr("height", height);
+    // Create SVG
+    const svg = d3.create("svg")
+        .attr("width", width)
+        .attr("height", height);
 
-const g = svg.append("g")
-    .attr("transform", `translate(${width/2}, ${height/2})`);
+    const g = svg.append("g")
+        .attr("transform", `translate(${width/2}, ${height/2 + 20})`);
 
-// Inner radius (donut)
-const arc = d3.arc()
-    .innerRadius(radius * 0.45)
-    .outerRadius(radius);
+    // Donut chart
+    const arc = d3.arc()
+        .innerRadius(radius * 0.55)
+        .outerRadius(radius);
 
-const pie = d3.pie()
-    .value(d => d.value)
-    .sort(null);
+    const pie = d3.pie()
+        .value(d => d.count)
+        .sort(null);
 
-// Animation scale for appearing
-const arc0 = d3.arc()
-    .innerRadius(radius * 0.45)
-    .outerRadius(0);
+    // Animation arc
+    const arc0 = d3.arc()
+        .innerRadius(radius * 0.55)
+        .outerRadius(0);
 
-// Center text
-const centerText = g.append("text")
-    .attr("text-anchor", "middle")
-    .attr("dy", "0.35em")
-    .style("font-size", "24px")
-    .style("font-weight", "600")
-    .style("fill", "#444");
+    // Center text group
+    const centerGroup = g.append("g");
+    
+    const centerText = centerGroup.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "-0.5em")
+        .style("font-size", "32px")
+        .style("font-weight", "700")
+        .style("fill", "#8B4513");
 
-// Create slices
-const arcs = g.selectAll("path")
-    .data(pie(filteredData))
-    .enter()
-    .append("path")
-    .attr("fill", d => colorScale(d.data.element))
-    .attr("stroke", "white")
-    .attr("stroke-width", 2)
-    .style("cursor", "pointer")
-    .attr("d", arc0)
-    .transition()
-    .duration(800)
-    .attrTween("d", function(d) {
-        const i = d3.interpolate(arc0(d), arc(d));
-        return t => i(t);
-    });
+    const centerSubtext = centerGroup.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "1em")
+        .style("font-size", "16px")
+        .style("font-weight", "400")
+        .style("fill", "#666");
 
-// Hover effects
-g.selectAll("path")
-    .on("mouseover", function (event, d) {
-        d3.select(this)
-            .transition()
-            .duration(200)
-            .attr("transform", "scale(1.05)");
+    const centerRating = centerGroup.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "2.5em")
+        .style("font-size", "14px")
+        .style("fill", "#999");
 
-        centerText.text(d.data.element);
+    // Create slices with animation
+    g.selectAll("path")
+        .data(pie(data))
+        .enter()
+        .append("path")
+        .attr("fill", d => colorScale(d.data.roast))
+        .attr("stroke", "white")
+        .attr("stroke-width", 3)
+        .style("cursor", "pointer")
+        .attr("d", arc0)
+        .transition()
+        .duration(1000)
+        .delay((d, i) => i * 100)
+        .attrTween("d", function(d) {
+            const i = d3.interpolate(arc0(d), arc(d));
+            return t => i(t);
+        });
 
-        tooltip.style("display", "block")
-               .html(`<strong>${d.data.element}</strong>: ${d.data.value.toFixed(2)}%`);
-    })
-    .on("mousemove", function(event) {
-        tooltip.style("left", event.pageX + 10 + "px")
-               .style("top", event.pageY - 20 + "px");
-    })
-    .on("mouseout", function () {
-        d3.select(this)
-            .transition()
-            .duration(200)
-            .attr("transform", "scale(1)");
-        centerText.text("");
-        tooltip.style("display", "none");
-    });
+    // Hover effects
+    g.selectAll("path")
+        .on("mouseover", function (event, d) {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr("transform", "scale(1.08)")
+                .style("filter", "brightness(1.15)");
 
-// Title
-svg.append("text")
-    .attr("x", width / 2)
-    .attr("y", 35)
-    .attr("text-anchor", "middle")
-    .style("font-size", "26px")
-    .style("font-weight", "700")
-    .text("Average Chemical Composition of Glass");
+            const percentage = ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1);
+            
+            centerText.text(d.data.count);
+            centerSubtext.text(d.data.roast);
+            centerRating.text(`Avg: ${d.data.avgRating.toFixed(1)}★`);
 
-// Legend
-const legend = d3.select("#container")
-    .append("div")
-    .attr("class", "legend");
+            tooltip.style("display", "block")
+                   .html(`
+                       <strong>${d.data.roast}</strong><br/>
+                       Count: ${d.data.count} coffees<br/>
+                       Percentage: ${percentage}%<br/>
+                       Avg Rating: ${d.data.avgRating.toFixed(2)}/100
+                   `);
+        })
+        .on("mousemove", function(event) {
+            tooltip.style("left", event.pageX + 15 + "px")
+                   .style("top", event.pageY - 28 + "px");
+        })
+        .on("mouseout", function () {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr("transform", "scale(1)")
+                .style("filter", "brightness(1)");
+            centerText.text("");
+            centerSubtext.text("");
+            centerRating.text("");
+            tooltip.style("display", "none");
+        });
 
-const legendItems = legend.selectAll(".legend-item")
-    .data(filteredData)
-    .enter()
-    .append("div")
-    .attr("class", "legend-item");
+    // Title
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", 35)
+        .attr("text-anchor", "middle")
+        .style("font-size", "32px")
+        .style("font-weight", "700")
+        .style("fill", "#333")
+        .text("☕ Coffee Roast Distribution");
 
-legendItems.append("div")
-    .attr("class", "legend-color")
-    .style("background-color", d => colorScale(d.element));
+    // Subtitle
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", 65)
+        .attr("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("fill", "#666")
+        .text(`Analysis of ${totalCoffees} coffee samples`);
 
-legendItems.append("span")
-    .html(d => `<strong>${d.element}</strong>: ${d.value.toFixed(2)}%`);
+    // Legend
+    const legend = d3.select("#container")
+        .append("div")
+        .attr("class", "legend");
 
-document.getElementById("container").append(svg.node());
+    const legendItems = legend.selectAll(".legend-item")
+        .data(data)
+        .enter()
+        .append("div")
+        .attr("class", "legend-item");
+
+    legendItems.append("div")
+        .attr("class", "legend-color")
+        .style("background-color", d => colorScale(d.roast));
+
+    legendItems.append("span")
+        .html(d => `<strong>${d.roast}</strong>: ${d.count} coffees (${d.avgRating.toFixed(1)}★)`);
+
+    // Stats boxes
+    const statsContainer = d3.select("#container")
+        .append("div")
+        .attr("class", "stats-container");
+
+    statsContainer.append("div")
+        .attr("class", "stat-box")
+        .html(`<h3>${totalCoffees}</h3><p>Total Coffees</p>`);
+
+    statsContainer.append("div")
+        .attr("class", "stat-box")
+        .html(`<h3>${avgRatingAll.toFixed(1)}</h3><p>Average Rating</p>`);
+
+    statsContainer.append("div")
+        .attr("class", "stat-box")
+        .html(`<h3>${uniqueCountries}</h3><p>Countries</p>`);
+
+    statsContainer.append("div")
+        .attr("class", "stat-box")
+        .html(`<h3>${data.length}</h3><p>Roast Types</p>`);
+
+    document.getElementById("container").append(svg.node());
+
+} catch (error) {
+    document.getElementById("container").innerHTML = 
+        `<div id="error">
+            <p><strong>❌ Error loading data:</strong></p>
+            <p>${error.message}</p>
+            <p>Please make sure "coffee_analysis.csv" is in the same directory as this HTML file.</p>
+        </div>`;
+    console.error("Full error:", error);
+}
 </script>
 
 </body>
