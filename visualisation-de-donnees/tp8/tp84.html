@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glass Elements Pie Chart</title>
+
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+            max-width: 1100px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 12px;
+            padding: 10px 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+        }
+
+        #tooltip {
+            position: absolute;
+            display: none;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.75);
+            color: white;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container"></div>
+<div id="tooltip"></div>
+
+<script type="module">
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+// Load CSV
+const rows = await d3.csv("./glass.csv", d3.autoType);
+if (!rows.length) throw new Error("glass.csv missing");
+
+const elementColumns = ["Na","Mg","Al","Si","K","Ca","Ba","Fe"];
+
+const elementMeans = elementColumns.map(e => ({
+    element: e,
+    value: d3.mean(rows.map(d => d[e]).filter(Number.isFinite)) ?? 0
+}));
+
+const filteredData = elementMeans.filter(d => d.value > 0.01);
+
+// SVG setup
+const width = 650, height = 650;
+const radius = Math.min(width, height) / 2 - 40;
+
+// Better color palette
+const colorScale = d3.scaleOrdinal()
+    .domain(filteredData.map(d => d.element))
+    .range(d3.schemeSet2);
+
+// Tooltip
+const tooltip = d3.select("#tooltip");
+
+// Create SVG
+const svg = d3.create("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+const g = svg.append("g")
+    .attr("transform", `translate(${width/2}, ${height/2})`);
+
+// Inner radius (donut)
+const arc = d3.arc()
+    .innerRadius(radius * 0.45)
+    .outerRadius(radius);
+
+const pie = d3.pie()
+    .value(d => d.value)
+    .sort(null);
+
+// Animation scale for appearing
+const arc0 = d3.arc()
+    .innerRadius(radius * 0.45)
+    .outerRadius(0);
+
+// Center text
+const centerText = g.append("text")
+    .attr("text-anchor", "middle")
+    .attr("dy", "0.35em")
+    .style("font-size", "24px")
+    .style("font-weight", "600")
+    .style("fill", "#444");
+
+// Create slices
+const arcs = g.selectAll("path")
+    .data(pie(filteredData))
+    .enter()
+    .append("path")
+    .attr("fill", d => colorScale(d.data.element))
+    .attr("stroke", "white")
+    .attr("stroke-width", 2)
+    .style("cursor", "pointer")
+    .attr("d", arc0)
+    .transition()
+    .duration(800)
+    .attrTween("d", function(d) {
+        const i = d3.interpolate(arc0(d), arc(d));
+        return t => i(t);
+    });
+
+// Hover effects
+g.selectAll("path")
+    .on("mouseover", function (event, d) {
+        d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("transform", "scale(1.05)");
+
+        centerText.text(d.data.element);
+
+        tooltip.style("display", "block")
+               .html(`<strong>${d.data.element}</strong>: ${d.data.value.toFixed(2)}%`);
+    })
+    .on("mousemove", function(event) {
+        tooltip.style("left", event.pageX + 10 + "px")
+               .style("top", event.pageY - 20 + "px");
+    })
+    .on("mouseout", function () {
+        d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("transform", "scale(1)");
+        centerText.text("");
+        tooltip.style("display", "none");
+    });
+
+// Title
+svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", 35)
+    .attr("text-anchor", "middle")
+    .style("font-size", "26px")
+    .style("font-weight", "700")
+    .text("Average Chemical Composition of Glass");
+
+// Legend
+const legend = d3.select("#container")
+    .append("div")
+    .attr("class", "legend");
+
+const legendItems = legend.selectAll(".legend-item")
+    .data(filteredData)
+    .enter()
+    .append("div")
+    .attr("class", "legend-item");
+
+legendItems.append("div")
+    .attr("class", "legend-color")
+    .style("background-color", d => colorScale(d.element));
+
+legendItems.append("span")
+    .html(d => `<strong>${d.element}</strong>: ${d.value.toFixed(2)}%`);
+
+document.getElementById("container").append(svg.node());
+</script>
+
+</body>
+</html>
