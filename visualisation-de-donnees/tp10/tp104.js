@@ -1,181 +1,312 @@
-d3.csv("Boston_marathon.csv", d3.autoType)
-  .then(data => {
+// Dimensions and Margins
+margin = { top: 50, right: 200, bottom: 50, left: 60 };
+const width = 960 - margin.left - margin.right;
+const height = 600 - margin.top - margin.bottom;
 
-    // Sort by year
-    data = data.sort((a, b) => d3.ascending(a.time, b.time));
+// Append SVG to the container
+const svg = d3
+  .select("#container")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const xVals = data.map(d => d.time);
-    const yVals = data.map(d => d.value);
-    const n = xVals.length;
+// Load Data
+d3.csv("Boston_marathon.csv")
+  .then((data) => {
+    // Parse Data
+    // The CSV has columns: "","X",time,value
+    // We are interested in 'time' (Year) and 'value' (Winning Time in Minutes)
+    const parsedData = data
+      .map((d) => ({
+        time: +d.time,
+        value: +d.value,
+      }))
+      .filter((d) => !isNaN(d.time) && !isNaN(d.value));
 
-    
-    const loess = science.stats.loess();
-    loess.bandwidth((n - 1) / 3 /n); 
-   
+    // Scales
+    const x = d3
+      .scaleLinear()
+      .domain(d3.extent(parsedData, (d) => d.time))
+      .range([0, width]);
 
-    const loessY = loess(xVals, yVals);
+    const y = d3
+      .scaleLinear()
+      .domain([
+        d3.min(parsedData, (d) => d.value) - 5,
+        d3.max(parsedData, (d) => d.value) + 5,
+      ])
+      .range([height, 0]);
 
-   
-    function centeredMA(arr, w = 5) {
-      const out = new Array(arr.length).fill(NaN);
-      const h = Math.floor(w / 2);
-      for (let i = 0; i < arr.length; i++) {
-        if (i - h < 0 || i + h >= arr.length) continue;
-        let sum = 0;
-        for (let j = i - h; j <= i + h; j++) sum += arr[j];
-        out[i] = sum / w;
-      }
-      return out;
-    }
+    // Axes
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x).tickFormat(d3.format("d"))); // Format as integer (Year)
 
-    const cmaY = centeredMA(yVals, 5);
+    svg.append("g").call(d3.axisLeft(y));
 
-   
-    function oneSidedMA(arr, w = 5) {
-      const out = new Array(arr.length).fill(NaN);
-      let sum = 0;
-      for (let i = 0; i < arr.length; i++) {
-        sum += arr[i];
-        if (i >= w) sum -= arr[i - w];
-        if (i >= w - 1) out[i] = sum / w;
-      }
-      return out;
-    }
+    // Axis Labels
+    svg
+      .append("text")
+      .attr("text-anchor", "end")
+      .attr("x", width)
+      .attr("y", height + 40)
+      .text("Year");
 
-    const osmaY = oneSidedMA(yVals, 5);
+    svg
+      .append("text")
+      .attr("text-anchor", "end")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -40)
+      .attr("x", 0)
+      .text("Winning Time (minutes)");
 
-    
-    function gaussian(arr, sigma = 2) {
-      const radius = Math.ceil(sigma * 3);
-      const kernel = [];
-      for (let i = -radius; i <= radius; i++) {
-        kernel.push(Math.exp(-(i * i) / (2 * sigma * sigma)));
-      }
-      const sumKernel = kernel.reduce((a, b) => a + b, 0);
-      const out = new Array(arr.length).fill(NaN);
-
-      for (let i = 0; i < arr.length; i++) {
-        let s = 0, wsum = 0;
-        for (let k = -radius; k <= radius; k++) {
-          const j = i + k;
-          if (j >= 0 && j < arr.length) {
-            const w = kernel[k + radius];
-            s += arr[j] * w;
-            wsum += w;
-          }
-        }
-        out[i] = s / wsum;
-      }
-      return out;
-    }
-
-    const gaussY = gaussian(yVals, 2);
-
-  
-    function holt(values, alpha = 0.4, beta = 0.3) {
-      const out = [];
-      let level = values[0];
-      let trend = values[1] - values[0];
-
-      out[0] = level;
-
-      for (let t = 1; t < values.length; t++) {
-        const prevLevel = level;
-
-        level = alpha * values[t] + (1 - alpha) * (level + trend);
-        trend = beta * (level - prevLevel) + (1 - beta) * trend;
-
-        out[t] = level + trend;
-      }
-      return out;
-    }
-
-    const holtY = holt(yVals, 0.3, 0.4);
-
-   
-
-    const width = 1100, height = 550;
-    const margin = { top: 40, right: 200, bottom: 40, left: 70 };
-
-    const svg = d3.select("#container")
-      .append("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .style("font-family", "Arial");
-
-    const plot = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const innerW = width - margin.left - margin.right;
-    const innerH = height - margin.top - margin.bottom;
-
-    const x = d3.scaleLinear()
-      .domain(d3.extent(xVals))
-      .range([0, innerW]);
-
-    const y = d3.scaleLinear()
-      .domain([d3.min(yVals) - 5, d3.max(yVals) + 5])
-      .range([innerH, 0]);
-
-    plot.append("g")
-      .attr("transform", `translate(0,${innerH})`)
-      .call(d3.axisBottom(x).tickFormat(d3.format("d")));
-
-    plot.append("g").call(d3.axisLeft(y));
-
-    // Raw points
-    plot.selectAll("circle")
-      .data(data)
+    // Plot Original Data (Scatter Plot)
+    svg
+      .selectAll("circle")
+      .data(parsedData)
       .enter()
       .append("circle")
-      .attr("cx", d => x(d.time))
-      .attr("cy", d => y(d.value))
+      .attr("cx", (d) => x(d.time))
+      .attr("cy", (d) => y(d.value))
       .attr("r", 3)
-      .attr("fill", "black")
-      .style("opacity", 0.5);
+      .attr("fill", "#4682b4") // changed original data color to steelblue
+      .attr("opacity", 0.7);
 
-    const line = d3.line()
-      .defined(d => !isNaN(d.y))
-      .x(d => x(d.x))
-      .y(d => y(d.y));
+    // --- Smoothing Functions ---
 
-    const legendData = [];
-
-    function drawLine(name, arr, color, w = 2) {
-      const series = xVals.map((xx, i) => ({ x: xx, y: arr[i] }));
-      plot.append("path")
-        .datum(series)
-        .attr("fill", "none")
-        .attr("stroke", color)
-        .attr("stroke-width", w)
-        .attr("d", line);
-
-      legendData.push({ name, color });
+    /**
+     * 1. Centered Moving Average
+     * Calculates the average of the window [i - k/2, i + k/2].
+     * For k=5, it averages indices i-2, i-1, i, i+1, i+2.
+     */
+    function centeredMovingAverage(data, k) {
+      const half = Math.floor(k / 2);
+      return data
+        .map((d, i) => {
+          if (i < half || i >= data.length - half) return null;
+          const subset = data.slice(i - half, i + half + 1);
+          const mean = d3.mean(subset, (d) => d.value);
+          return { time: d.time, value: mean };
+        })
+        .filter((d) => d !== null);
     }
 
-    drawLine("LOESS", loessY, "#1f77b4", 3);
-    drawLine("Centered MA", cmaY, "#ff7f0e");
-    drawLine("One-sided MA", osmaY, "#2ca02c");
-    drawLine("Gaussian", gaussY, "#9467bd");
-    drawLine("Double Exp (Holt)", holtY, "#d62728");
+    /**
+     * 2. One-sided Moving Average
+     * Calculates the average of the window [i - k + 1, i].
+     * For k=5, it averages indices i-4, i-3, i-2, i-1, i.
+     * This represents the average of the "last k" points.
+     */
+    function oneSidedMovingAverage(data, k) {
+      return data
+        .map((d, i) => {
+          if (i < k - 1) return null;
+          const subset = data.slice(i - k + 1, i + 1);
+          const mean = d3.mean(subset, (d) => d.value);
+          return { time: d.time, value: mean };
+        })
+        .filter((d) => d !== null);
+    }
 
-    // legend
-    const legend = svg.append("g")
-      .attr("transform", `translate(${width - margin.right + 20},${margin.top})`);
+    /**
+     * 3. Gaussian Kernel Smoothing
+     * Uses a Gaussian weight function to calculate a weighted average.
+     * Points closer to the target time have higher weights.
+     * Sigma controls the bandwidth (smoothness).
+     */
 
-    legendData.forEach((d, i) => {
-      const g = legend.append("g")
-        .attr("transform", `translate(0, ${i * 22})`);
+    function gaussianKernelSmoothing(data, sigma) {
+      // Le rayon d'action de la gaussienne (environ 3 écarts-types)
+      const range = Math.ceil(3 * sigma);
 
-      g.append("rect")
-        .attr("width", 20)
-        .attr("height", 4)
-        .attr("fill", d.color);
+      return data
+        .map((d, i) => {
+          // MODIFICATION ICI :
+          // Si on est au tout début (i < range) ou à la toute fin,
+          // on ne calcule pas le point pour éviter les effets de bord, comme dans le Code 2.
+          if (i < range || i >= data.length - range) {
+            return null;
+          }
+
+          let weightSum = 0;
+          let valueSum = 0;
+
+          const start = i - range;
+          const end = i + range + 1;
+
+          for (let j = start; j < end; j++) {
+            const dist = i - j;
+
+            // J'ai aussi corrigé la formule mathématique pour qu'elle soit standard (comme Code 2)
+            // Suppression du "-0.5" en trop qui était dans votre Code 1
+            const weight = Math.exp(-(dist * dist) / (2 * sigma * sigma));
+
+            weightSum += weight;
+            valueSum += weight * data[j].value;
+          }
+          return { time: d.time, value: valueSum / weightSum };
+        })
+        .filter((d) => d !== null); // On retire les points vides du début et de la fin
+    }
+
+    /**
+     * 4. Double Exponential Smoothing (Holt's Linear Trend)
+     * Captures both level and trend.
+     * S_t = alpha * y_t + (1 - alpha) * (S_{t-1} + b_{t-1})
+     * b_t = beta * (S_t - S_{t-1}) + (1 - beta) * b_{t-1}
+     */
+    function doubleExponentialSmoothing(data, alpha = 0.4, beta = 0.3) {
+      if (data.length < 2) return data;
+      const result = [];
+
+      // Initialization
+      let s = data[0].value;
+      let b = data[1].value - data[0].value; // Initial trend
+
+      result.push({ time: data[0].time, value: s });
+
+      for (let i = 1; i < data.length; i++) {
+        const val = data[i].value;
+        const oldS = s;
+
+        // Level update
+        s = alpha * val + (1 - alpha) * (s + b);
+
+        // Trend update
+        b = beta * (s - oldS) + (1 - beta) * b;
+
+        result.push({ time: data[i].time, value: s });
+      }
+      return result;
+    }
+
+    /**
+     * 5. LOWESS (Locally Weighted Scatterplot Smoothing)
+     * Uses the science.js library.
+     * Fits local polynomials to subsets of data.
+     */
+    function calculateLowess(data, bandwidth) {
+      if (
+        typeof science === "undefined" ||
+        !science.stats ||
+        !science.stats.loess
+      ) {
+        console.warn("science.js library not found. Skipping LOWESS.");
+        return [];
+      }
+      try {
+        // Construire x et y
+        const xValues = data.map((d) => d.time);
+        const yValues = data.map((d) => d.value);
+
+        // Créer le loess et définir la bande passante si disponible
+        const loessFactory = science.stats.loess();
+        if (typeof loessFactory.bandwidth === "function")
+          loessFactory.bandwidth(bandwidth);
+
+        const smoothed = loessFactory(xValues, yValues);
+        if (!smoothed || smoothed.length !== xValues.length) {
+          console.warn("LOESS returned unexpected result:", smoothed);
+          return [];
+        }
+
+        console.info("LOESS computed:", {
+          bandwidth,
+          n: smoothed.length,
+          first: smoothed.slice(0, 3),
+        });
+        return xValues.map((t, i) => ({ time: t, value: smoothed[i] }));
+      } catch (e) {
+        console.error("Erreur LOESS:", e);
+        return [];
+      }
+    }
+
+    // --- Calculate Series ---
+    const k = 5; // Window size for moving averages
+
+    const cmaData = centeredMovingAverage(parsedData, k);
+    const osmaData = oneSidedMovingAverage(parsedData, k);
+    const gaussianData = gaussianKernelSmoothing(parsedData, 0.66); // sigma=2 (approx similar smoothing to k=5)
+    const desData = doubleExponentialSmoothing(parsedData, 0.4, 0.3); // alpha=0.4, beta=0.3
+    const lowessData = calculateLowess(parsedData, 0.3); // bandwidth 0.3
+
+    // --- Draw Lines ---
+    const line = d3
+      .line()
+      .x((d) => x(d.time))
+      .y((d) => y(d.value));
+
+    const series = [
+      { name: "Centered Moving Avg (k=5)", data: cmaData, color: "#1f78b4" },
+      { name: "One-sided Moving Avg (k=5)", data: osmaData, color: "#33a02c" },
+      {
+        name: "Gaussian Kernel (sigma=0.66)",
+        data: gaussianData,
+        color: "#e31a1c",
+      }, // Rouge
+      { name: "Double Exp. Smoothing", data: desData, color: "#6a3d9a" },
+      { name: "LOWESS (bw=0.3)", data: lowessData, color: "#ff7f00" },
+    ];
+
+    series.forEach((s) => {
+      if (s.data.length > 0) {
+        svg
+          .append("path")
+          .datum(s.data)
+          .attr("fill", "none")
+          .attr("stroke", s.color)
+          .attr("stroke-width", 2)
+          .attr("d", line)
+          .attr("class", "line-series"); // Class for potential interactivity
+      }
+    });
+
+    // --- Legend ---
+    const legend = svg
+      .append("g")
+      .attr("transform", `translate(${width + 20}, 0)`);
+
+    series.forEach((s, i) => {
+      const g = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
+
+      g.append("line")
+        .attr("x1", 0)
+        .attr("x2", 20)
+        .attr("y1", 5)
+        .attr("y2", 5)
+        .attr("stroke", s.color)
+        .attr("stroke-width", 2);
 
       g.append("text")
-        .attr("x", 28)
-        .attr("y", 4)
-        .text(d.name)
-        .style("font-size", "13px");
+        .attr("x", 25)
+        .attr("y", 9)
+        .style("font-family", "sans-serif")
+        .style("font-size", "12px")
+        .text(s.name);
     });
+
+    // Add original data to legend
+    const gOrig = legend
+      .append("g")
+      .attr("transform", `translate(0, ${series.length * 25})`);
+    gOrig
+      .append("circle")
+      .attr("cx", 10)
+      .attr("cy", 5)
+      .attr("r", 3)
+      .attr("fill", "#4682b4"); // match legend marker to new original color
+    gOrig
+      .append("text")
+      .attr("x", 25)
+      .attr("y", 9)
+      .style("font-family", "sans-serif")
+      .style("font-size", "12px")
+      .text("Original Data");
+  })
+  .catch((error) => {
+    console.error("Error loading data:", error);
   });
