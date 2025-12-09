@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<div id="container"></div>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="./science.v1.js"></script>
+<script>
+(async function () {
+  const raw = await d3.csv("./Boston_marathon.csv", d => ({
+    year: +d.time,
+    minutes: +d.value
+  }));
+
+  const data = raw
+    .filter(d => Number.isFinite(d.year) && Number.isFinite(d.minutes))
+    .sort((a, b) => d3.ascending(a.year, b.year));
+
+  const width = 1100;
+  const height = 700;
+  const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+
+  const x = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.year))
+    .nice()
+    .range([margin.left, width - margin.right]);
+
+  const allY = data.map(d => d.minutes);
+  const y = d3.scaleLinear()
+    .domain(d3.extent(allY))
+    .nice()
+    .range([height - margin.bottom, margin.top]);
+
+  const svg = d3.select("#container")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  const xAxis = g => g
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(10, "d"))
+    .call(g => g.selectAll("text").attr("font-size", 12));
+
+  const yAxis = g => g
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).ticks(8))
+    .call(g => g.selectAll("text").attr("font-size", 12));
+
+  svg.append("g").call(xAxis);
+  svg.append("g").call(yAxis);
+
+  svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", margin.top - 10)
+    .attr("text-anchor", "middle")
+    .attr("font-weight", "bold")
+    .text("Boston Marathon Winning Times with LOWESS");
+
+  svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", height - 15)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 12)
+    .text("Year");
+
+  svg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 2)
+    .attr("y", 28)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 12)
+    .text("Winning time (minutes)");
+
+  // light background grid
+  svg.append("g")
+    .attr("stroke", "#e8eef4")
+    .attr("stroke-width", 1)
+    .selectAll("line")
+    .data(y.ticks(8))
+    .join("line")
+    .attr("x1", margin.left)
+    .attr("x2", width - margin.right)
+    .attr("y1", d => y(d))
+    .attr("y2", d => y(d));
+
+  svg.append("g")
+    .attr("fill", "#2b6cb0")
+    .attr("fill-opacity", 0.4)
+    .selectAll("circle")
+    .data(data)
+    .join("circle")
+    .attr("r", 3)
+    .attr("cx", d => x(d.year))
+    .attr("cy", d => y(d.minutes));
+
+  const k = 5;
+  const bandwidth = Math.max(k / data.length, 2 / data.length);
+  const loessBandwidth = 0.3; // higher bandwidth for a smoother LOWESS
+  const loess = science.stats.loess().bandwidth(loessBandwidth);
+  const smoothedY = loess(
+    data.map(d => d.year),
+    data.map(d => d.minutes)
+  );
+  const smoothed = data.map((d, i) => ({ year: d.year, minutes: smoothedY[i] }));
+
+  const centeredMA = data.map((d, idx) => {
+    const half = Math.floor(k / 2);
+    const start = Math.max(0, idx - half);
+    const end = Math.min(data.length, idx + half + 1);
+    const slice = data.slice(start, end);
+    const mean = d3.mean(slice, v => v.minutes);
+    return { year: d.year, minutes: mean };
+  });
+
+  const oneSidedMA = data.map((d, idx) => {
+    const start = Math.max(0, idx - k + 1);
+    const slice = data.slice(start, idx + 1);
+    const mean = d3.mean(slice, v => v.minutes);
+    return { year: d.year, minutes: mean };
+  });
+
+  function gaussianKernelSmooth(points, sigma) {
+    const denom = 2 * sigma * sigma;
+    return points.map(p => {
+      let num = 0;
+      let den = 0;
+      for (const q of points) {
+        const w = Math.exp(-((p.year - q.year) ** 2) / denom);
+        num += w * q.minutes;
+        den += w;
+      }
+      return { year: p.year, minutes: den === 0 ? p.minutes : num / den };
+    });
+  }
+
+  const gaussianSmoothed = gaussianKernelSmooth(data, 2);
+
+  function doubleExponentialSmoothing(points, alpha, beta) {
+    // Holt's linear method on the minutes series, returned as {year, minutes}
+    const result = [];
+    if (!points.length) return result;
+
+    let level = points[0].minutes;
+    let trend = points.length > 1 ? points[1].minutes - points[0].minutes : 0;
+    result.push({ year: points[0].year, minutes: level });
+
+    for (let i = 1; i < points.length; i++) {
+      const value = points[i].minutes;
+      const prevLevel = level;
+      level = alpha * value + (1 - alpha) * (level + trend);
+      trend = beta * (level - prevLevel) + (1 - beta) * trend;
+      result.push({ year: points[i].year, minutes: level });
+    }
+    return result;
+  }
+
+  const doubleExp = doubleExponentialSmoothing(data, 0.4, 0.3);
+
+  const line = d3.line()
+    .x(d => x(d.year))
+    .y(d => y(d.minutes))
+    .curve(d3.curveMonotoneX);
+
+  svg.append("path")
+    .datum(smoothed)
+    .attr("fill", "none")
+    .attr("stroke", "#b23b3b")
+    .attr("stroke-width", 3.5)
+    .attr("d", line);
+
+  const lines = [
+    { data: centeredMA, color: "#1f77b4", width: 2, label: "Centered Moving Average" },
+    { data: oneSidedMA, color: "#6c6f7f", width: 2, label: "One-sided Moving Average" },
+    { data: gaussianSmoothed, color: "#2f855a", width: 2, label: "Gaussian Kernel Smoothing" },
+    { data: doubleExp, color: "#8c564b", width: 2, label: "Double Exponential Smoothing" }
+  ];
+
+  lines.forEach(cfg => {
+    svg.append("path")
+      .datum(cfg.data)
+      .attr("fill", "none")
+      .attr("stroke", cfg.color)
+      .attr("stroke-width", cfg.width)
+      .attr("d", line);
+  });
+
+  svg.append("g")
+    .attr("transform", `translate(${width - margin.right - 220},${margin.top})`)
+    .call(g => {
+      const legend = g.selectAll("g")
+        .data([
+          { color: "#2b6cb0", label: "Winning times" },
+          { color: "#b23b3b", label: "LOWESS" },
+          { color: "#1f77b4", label: "Centered Moving Average" },
+          { color: "#6c6f7f", label: "One-sided Moving Average" },
+          { color: "#2f855a", label: "Gaussian Kernel Smoothing" },
+          { color: "#8c564b", label: "Double Exponential Smoothing" }
+        ])
+        .join("g")
+        .attr("transform", (_, i) => `translate(0, ${i * 20})`);
+
+      legend.append("rect")
+        .attr("width", 14)
+        .attr("height", 14)
+        .attr("fill", d => d.color);
+
+      legend.append("text")
+        .attr("x", 20)
+        .attr("y", 9)
+        .attr("dominant-baseline", "middle")
+        .text(d => d.label);
+    });
+})();
+</script>
