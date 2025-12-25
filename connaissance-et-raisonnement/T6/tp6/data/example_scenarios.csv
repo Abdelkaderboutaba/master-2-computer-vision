@@ -1,0 +1,11 @@
+Meteo,Luminosite,Camera,Radar
+Soleil,Jour,Present,Present
+Pluie,Nuit,Absent,Present
+Brouillard,Nuit,Present,Absent
+Soleil,Nuit,Absent,Absent
+Pluie,Jour,Present,Present
+Brouillard,Jour,Absent,Present
+Soleil,Jour,Absent,Absent
+Pluie,Nuit,Present,Absent
+Brouillard,Nuit,Absent,Present
+Soleil,Nuit,Present,Present

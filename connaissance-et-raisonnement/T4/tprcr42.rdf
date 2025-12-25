@@ -1,0 +1,212 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6/"
+     xml:base="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6/"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:untitled-ontology-6="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#a_un_comportement -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#a_un_comportement">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#declenche_action -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#declenche_action">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#est_situe_dans -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#est_situe_dans">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#OBSTACLE"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ZONE_ROUTE"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ACTION_VEHICULE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ACTION_VEHICULE"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#CYCLISTE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#CYCLISTE">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#MOBILE"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ETAT_COMPORTEMENT -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ETAT_COMPORTEMENT"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#FIXE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#FIXE">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#OBSTACLE"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#FREINAGE_URGENCE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#FREINAGE_URGENCE">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#PIETON"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#a_un_comportement"/>
+                        <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAVERSANT"/>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#est_situe_dans"/>
+                        <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAJECTOIRE_DIRECTE"/>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ACTION_VEHICULE"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#IMMOBILE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#IMMOBILE">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ETAT_COMPORTEMENT"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#MOBILE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#MOBILE">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#OBSTACLE"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#OBSTACLE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#OBSTACLE"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#PIETON -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#PIETON">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#MOBILE"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAJECTOIRE_DIRECTE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAJECTOIRE_DIRECTE">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ZONE_ROUTE"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAVERSANT -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAVERSANT">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ETAT_COMPORTEMENT"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TROTTOIR -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TROTTOIR">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ZONE_ROUTE"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ZONE_ROUTE -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#ZONE_ROUTE"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Action_En_Cours -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Action_En_Cours">
+        <rdf:type rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAVERSANT"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Pieton1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Pieton1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#PIETON"/>
+        <untitled-ontology-6:a_un_comportement rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Action_En_Cours"/>
+        <untitled-ontology-6:est_situe_dans rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Zone_Danger_Devant"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Zone_Danger_Devant -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#Zone_Danger_Devant">
+        <rdf:type rdf:resource="http://www.semanticweb.org/ayooinformatique/ontologies/2025/11/untitled-ontology-6#TRAJECTOIRE_DIRECTE"/>
+    </owl:NamedIndividual>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi -->
+

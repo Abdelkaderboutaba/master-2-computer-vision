@@ -1,0 +1,16 @@
+Omega = {'Pieton','Vehicule','Debris'};
+
+% Expert 1 : Caméra
+m1.subsets = {{'Pieton'}, {'Vehicule'}, {'Pieton','Vehicule','Debris'}};
+m1.masses  = [0.7, 0.2, 0.1];
+
+% Expert 2 : LiDAR
+m2.subsets = {{'Pieton','Debris'}, {'Vehicule'}, {'Pieton','Vehicule','Debris'}};
+m2.masses  = [0.6, 0.1, 0.3];
+
+% Expert 3 : Radar
+alpha = 0.85; % fiabilité
+m3.subsets = {{'Pieton','Vehicule','Debris'}};
+m3.masses = [alpha];
+
+save('scenario1.mat','Omega','m1','m2','m3','alpha');

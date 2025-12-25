@@ -1,0 +1,11 @@
+Scenario,Meteo,Luminosite,Camera,Radar,Prob_Obstacle
+1,Soleil,Jour,Present,Present,0.9815950920245398
+2,Pluie,Nuit,Absent,Present,0.8221343873517787
+3,Brouillard,Nuit,Present,Absent,0.16494845360824745
+4,Soleil,Nuit,Absent,Absent,0.11475409836065573
+5,Pluie,Jour,Present,Present,0.9411764705882353
+6,Brouillard,Jour,Absent,Present,0.8258064516129032
+7,Soleil,Jour,Absent,Absent,0.11869436201780416
+8,Pluie,Nuit,Present,Absent,0.17177914110429446
+9,Brouillard,Nuit,Absent,Present,0.8205128205128205
+10,Soleil,Nuit,Present,Present,0.888888888888889
